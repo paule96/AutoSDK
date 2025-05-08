@@ -1,12 +1,12 @@
-using System.Collections.Immutable;
-using Microsoft.OpenApi.Models;
 using AutoSDK.Extensions;
 using AutoSDK.Naming.Clients;
 using AutoSDK.Serialization.Form;
+using Microsoft.OpenApi.Models;
+using System.Collections.Immutable;
 
 namespace AutoSDK.Models;
 
-public record struct EndPoint(
+public struct EndPoint(
     string Id,
     string Namespace,
     string ClassName,
@@ -27,20 +27,41 @@ public record struct EndPoint(
     bool IsDeprecated,
     string ExperimentalStage,
     TypeData RequestType
-)
+) : IEquatable<EndPoint>
 {
     public string MethodName => $"{NotAsyncMethodName}Async";
     public string NotAsyncMethodName => Id.ToPropertyName();
     public bool IsMultipartFormData => RequestMediaType == "multipart/form-data";
-    
+
     public string FileNameWithoutExtension => $"{Namespace}.{ClassName}.{Id.ToPropertyName()}";
-    
+
     public string InterfaceFileNameWithoutExtension => $"{Namespace}.I{ClassName}.{Id.ToPropertyName()}";
-    
+
+    public string Id { get; } = Id;
+    public string Namespace { get; } = Namespace;
+    public string ClassName { get; } = ClassName;
+    public string BaseUrl { get; } = BaseUrl;
+    public bool Stream { get; } = Stream;
+    public string Path { get; } = Path;
+    public string RequestMediaType { get; } = RequestMediaType;
+    public EquatableArray<MethodParameter> Parameters { get; } = Parameters;
+    public EndPointResponse SuccessResponse { get; } = SuccessResponse;
+    public EquatableArray<EndPointResponse> ErrorResponses { get; } = ErrorResponses;
+    public EquatableArray<Authorization> Authorizations { get; } = Authorizations;
+    public EquatableArray<MethodParameter> QueryParameters { get; } = QueryParameters;
+    public OperationType HttpMethod { get; } = HttpMethod;
+    public ContentType ContentType { get; } = ContentType;
+    public string Summary { get; } = Summary;
+    public string BaseUrlSummary { get; } = BaseUrlSummary;
+    public Settings Settings { get; } = Settings;
+    public bool IsDeprecated { get; } = IsDeprecated;
+    public string ExperimentalStage { get; } = ExperimentalStage;
+    public TypeData RequestType { get; } = RequestType;
+
     public static EndPoint FromSchema(OperationContext operation)
     {
         operation = operation ?? throw new ArgumentNullException(nameof(operation));
-        
+
         var authorizations = operation.Operation.Security
             .SelectMany(x => x)
             .Select(x => Authorization.FromOpenApiSecurityScheme(x.Key, operation.Settings))
@@ -52,12 +73,12 @@ public record struct EndPoint(
                 .Select(x => Authorization.FromOpenApiSecurityScheme(x.Key, operation.Settings))
                 .ToImmutableArray();
         }
-        
+
         var parameters = operation.Schemas
             .Where(x => x is { Hint: Hint.Parameter, ParameterData: not null })
             .Select(x => x.ParameterData!.Value)
             .ToList();
-        
+
         // Ensure that parameters with the same name are unique
         var duplicateParameters = parameters
             .GroupBy(x => x.Name)
@@ -78,10 +99,10 @@ public record struct EndPoint(
                 }
             }
         }
-        
+
         var preparedPath = operation.OperationPath.PreparePath(parameters);
         var queryParameters = ParameterSerializer.SerializeQueryParameters(parameters);
- 
+
         var requestMediaTypes =
             operation.Operation.RequestBody?.ResolveIfRequired().Content ??
             new Dictionary<string, OpenApiMediaType>();
@@ -112,7 +133,7 @@ public record struct EndPoint(
             {
                 continue;
             }
-            
+
             parameters.Add(MethodParameter.Default with
             {
                 Id = requestProperty.Id,
@@ -134,7 +155,7 @@ public record struct EndPoint(
                 ConverterType = requestProperty.ConverterType,
             });
         }
-        
+
         var firstTag = (operation.Operation.Tags ?? []).FirstOrDefault();
         var endPoint = new EndPoint(
             Id: operation.MethodName,
@@ -166,7 +187,80 @@ public record struct EndPoint(
             IsDeprecated: operation.Operation.Deprecated,
             ExperimentalStage: operation.Operation.GetExperimentalStage(),
             RequestType: requestType ?? TypeData.Default);
-        
+
         return endPoint;
+    }
+
+    public override bool Equals(object obj)
+    {
+        if (obj is not EndPoint other)
+        {
+            return false;
+        }
+
+        return Id == other.Id &&
+               Namespace == other.Namespace &&
+               ClassName == other.ClassName &&
+               BaseUrl == other.BaseUrl &&
+               Stream == other.Stream &&
+               Path == other.Path &&
+               RequestMediaType == other.RequestMediaType &&
+               Parameters.Equals(other.Parameters) &&
+               SuccessResponse.Equals(other.SuccessResponse) &&
+               ErrorResponses.Equals(other.ErrorResponses) &&
+               Authorizations.Equals(other.Authorizations) &&
+               QueryParameters.Equals(other.QueryParameters) &&
+               HttpMethod == other.HttpMethod &&
+               ContentType == other.ContentType &&
+               Summary == other.Summary &&
+               BaseUrlSummary == other.BaseUrlSummary &&
+               Settings.Equals(other.Settings) &&
+               IsDeprecated == other.IsDeprecated &&
+               ExperimentalStage == other.ExperimentalStage &&
+               RequestType.Equals(other.RequestType);
+    }
+
+    public override int GetHashCode()
+    {
+        unchecked
+        {
+            int hash = 17;
+            hash = hash * 23 + Id.GetHashCode();
+            hash = hash * 23 + Namespace.GetHashCode();
+            hash = hash * 23 + ClassName.GetHashCode();
+            hash = hash * 23 + BaseUrl.GetHashCode();
+            hash = hash * 23 + Stream.GetHashCode();
+            hash = hash * 23 + Path.GetHashCode();
+            hash = hash * 23 + RequestMediaType.GetHashCode();
+            hash = hash * 23 + Parameters.GetHashCode();
+            hash = hash * 23 + SuccessResponse.GetHashCode();
+            hash = hash * 23 + ErrorResponses.GetHashCode();
+            hash = hash * 23 + Authorizations.GetHashCode();
+            hash = hash * 23 + QueryParameters.GetHashCode();
+            hash = hash * 23 + HttpMethod.GetHashCode();
+            hash = hash * 23 + ContentType.GetHashCode();
+            hash = hash * 23 + Summary.GetHashCode();
+            hash = hash * 23 + BaseUrlSummary.GetHashCode();
+            hash = hash * 23 + Settings.GetHashCode();
+            hash = hash * 23 + IsDeprecated.GetHashCode();
+            hash = hash * 23 + ExperimentalStage.GetHashCode();
+            hash = hash * 23 + RequestType.GetHashCode();
+            return hash;
+        }
+    }
+
+    bool IEquatable<EndPoint>.Equals(EndPoint other)
+    {
+        return this.Equals(other);
+    }
+
+    public static bool operator ==(EndPoint left, EndPoint right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(EndPoint left, EndPoint right)
+    {
+        return !(left == right);
     }
 }

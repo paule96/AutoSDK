@@ -1,15 +1,15 @@
-using Microsoft.OpenApi.Models;
 using AutoSDK.Extensions;
+using Microsoft.OpenApi.Models;
 
 namespace AutoSDK.Models;
 
-public record struct EndPointResponse(
+public struct EndPointResponse(
     string StatusCode,
     string Description,
     string MimeType,
     ContentType ContentType,
     TypeData Type
-)
+) : IEquatable<EndPointResponse>
 {
     public bool Is1XX => StatusCode.StartsWith("1", StringComparison.OrdinalIgnoreCase);
     public bool Is2XX => StatusCode.StartsWith("2", StringComparison.OrdinalIgnoreCase);
@@ -20,18 +20,24 @@ public record struct EndPointResponse(
     public bool IsPattern => StatusCode.Contains("XX");
     public int Min => int.TryParse(StatusCode.Replace("XX", "00"), out var code) ? code : 0;
     public int Max => int.TryParse(StatusCode.Replace("XX", "99"), out var code) ? code : 0;
-    
+
     public static EndPointResponse Default => new(
         StatusCode: "200",
         Description: string.Empty,
         MimeType: string.Empty,
         ContentType: ContentType.String,
         Type: TypeData.Default);
-    
+
+    public string StatusCode { get; set; } = StatusCode;
+    public string Description { get; } = Description;
+    public string MimeType { get; } = MimeType;
+    public ContentType ContentType { get; } = ContentType;
+    public TypeData Type { get; } = Type;
+
     public static EndPointResponse FromResponse(KeyValuePair<string, OpenApiResponse> responseWithStatusCode, OperationContext operation)
     {
         operation = operation ?? throw new ArgumentNullException(nameof(operation));
-        
+
         var responses = responseWithStatusCode.Value?.ResolveIfRequired().Content?
             .Select(x => (
                 StatusCode: responseWithStatusCode.Key,
@@ -46,9 +52,9 @@ public record struct EndPointResponse(
                 StatusCode = responseWithStatusCode.Key,
             };
         }
-        
+
         var response = responses.First();
-        
+
         var contentType = response.MimeType.Contains("application/octet-stream")
             ? ContentType.ByteArray
             : ContentType.String;
@@ -77,7 +83,50 @@ public record struct EndPointResponse(
             MimeType: response.MimeType,
             ContentType: contentType,
             Type: responseType ?? TypeData.Default);
-        
+
         return endPoint;
+    }
+
+    public override bool Equals(object obj)
+    {
+        if (obj is not EndPointResponse other)
+        {
+            return false;
+        }
+
+        return StatusCode == other.StatusCode &&
+               Description == other.Description &&
+               MimeType == other.MimeType &&
+               ContentType == other.ContentType &&
+               Type.Equals(other.Type);
+    }
+
+    public override int GetHashCode()
+    {
+        unchecked
+        {
+            int hash = 17;
+            hash = hash * 23 + StatusCode.GetHashCode();
+            hash = hash * 23 + Description.GetHashCode();
+            hash = hash * 23 + MimeType.GetHashCode();
+            hash = hash * 23 + ContentType.GetHashCode();
+            hash = hash * 23 + Type.GetHashCode();
+            return hash;
+        }
+    }
+
+    bool IEquatable<EndPointResponse>.Equals(EndPointResponse other)
+    {
+        return this.Equals(other);
+    }
+
+    public static bool operator ==(EndPointResponse left, EndPointResponse right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(EndPointResponse left, EndPointResponse right)
+    {
+        return !(left == right);
     }
 }

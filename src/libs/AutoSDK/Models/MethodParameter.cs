@@ -1,12 +1,12 @@
-using System.Collections.Immutable;
-using Microsoft.OpenApi.Models;
 using AutoSDK.Extensions;
 using AutoSDK.Naming.Properties;
 using AutoSDK.Serialization.Json;
+using Microsoft.OpenApi.Models;
+using System.Collections.Immutable;
 
 namespace AutoSDK.Models;
 
-public record struct MethodParameter(
+public struct MethodParameter(
     string Id,
     string Name,
     string Value,
@@ -23,7 +23,7 @@ public record struct MethodParameter(
     bool IsDeprecated,
     string Summary,
     string ConverterType,
-    ImmutableArray<PropertyData> Properties)
+    ImmutableArray<PropertyData> Properties) : IEquatable<MethodParameter>
 {
     public static MethodParameter Default => new(
         Id: string.Empty,
@@ -57,9 +57,9 @@ public record struct MethodParameter(
         {
             type = property.Type;
         }
-        
+
         var name = parameterName.ToPropertyName();
-        
+
         name = HandleWordSeparators(name);
 
         if (context.Parent != null)
@@ -68,7 +68,7 @@ public record struct MethodParameter(
         }
 
         name = CSharpPropertyNameGenerator.SanitizeName(name, context.Settings.ClsCompliantEnumPrefix, true);
-        
+
         var isRequired =
             parameter.Required ||
             parameter.In == ParameterLocation.Path;
@@ -77,7 +77,7 @@ public record struct MethodParameter(
         // {
         //     isRequired = false;
         // }
-        
+
         return new MethodParameter(
             Id: parameterName,
             Name: name,
@@ -108,7 +108,7 @@ public record struct MethodParameter(
     public string ParameterName => Name
         .Replace(".", string.Empty)
         .ToParameterName()
-        
+
         // https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/
         .ReplaceIfEquals("abstract", "@abstract")
         .ReplaceIfEquals("as", "@as")
@@ -196,13 +196,101 @@ public record struct MethodParameter(
             {
                 return ParameterName + "Value";
             }
-            
+
             return ParameterName;
         }
     }
-    
+
     public string ParameterDefaultValue =>
         DefaultValue == null || string.IsNullOrWhiteSpace(DefaultValue) || Type.IsAnyOfLike
         ? "default"
         : DefaultValue;
+
+    public string Id { get; set; } = Id;
+    public string Name { get; set; } = Name;
+    public string Value { get; set; } = Value;
+    public string Delimiter { get; set; } = Delimiter;
+    public string Selector { get; set; } = Selector;
+    public TypeData Type { get; set; } = Type;
+    public bool IsRequired { get; set; } = IsRequired;
+    public bool IsMultiPartFormDataFilename { get; set; } = IsMultiPartFormDataFilename;
+    public ParameterLocation? Location { get; } = Location;
+    public ParameterStyle? Style { get; } = Style;
+    public bool Explode { get; set; } = Explode;
+    public Settings Settings { get; set; } = Settings;
+    public string? DefaultValue { get; set; } = DefaultValue;
+    public bool IsDeprecated { get; set; } = IsDeprecated;
+    public string Summary { get; set; } = Summary;
+    public string ConverterType { get; set; } = ConverterType;
+    public ImmutableArray<PropertyData> Properties { get; } = Properties;
+
+    public override bool Equals(object obj)
+    {
+        if (obj is not MethodParameter other)
+        {
+            return false;
+        }
+
+        return Id == other.Id &&
+               Name == other.Name &&
+               Value == other.Value &&
+               Delimiter == other.Delimiter &&
+               Selector == other.Selector &&
+               Type.Equals(other.Type) &&
+               IsRequired == other.IsRequired &&
+               IsMultiPartFormDataFilename == other.IsMultiPartFormDataFilename &&
+               Location == other.Location &&
+               Style == other.Style &&
+               Explode == other.Explode &&
+               Settings.Equals(other.Settings) &&
+               DefaultValue == other.DefaultValue &&
+               IsDeprecated == other.IsDeprecated &&
+               Summary == other.Summary &&
+               ConverterType == other.ConverterType &&
+               Properties.SequenceEqual(other.Properties);
+    }
+
+    public override int GetHashCode()
+    {
+        unchecked
+        {
+            int hash = 17;
+            hash = hash * 23 + Id.GetHashCode();
+            hash = hash * 23 + Name.GetHashCode();
+            hash = hash * 23 + Value.GetHashCode();
+            hash = hash * 23 + Delimiter.GetHashCode();
+            hash = hash * 23 + Selector.GetHashCode();
+            hash = hash * 23 + Type.GetHashCode();
+            hash = hash * 23 + IsRequired.GetHashCode();
+            hash = hash * 23 + IsMultiPartFormDataFilename.GetHashCode();
+            hash = hash * 23 + Location.GetHashCode();
+            hash = hash * 23 + Style.GetHashCode();
+            hash = hash * 23 + Explode.GetHashCode();
+            hash = hash * 23 + Settings.GetHashCode();
+            hash = hash * 23 + (DefaultValue?.GetHashCode() ?? 0);
+            hash = hash * 23 + IsDeprecated.GetHashCode();
+            hash = hash * 23 + Summary.GetHashCode();
+            hash = hash * 23 + ConverterType.GetHashCode();
+            foreach (var property in Properties)
+            {
+                hash = hash * 23 + property.GetHashCode();
+            }
+            return hash;
+        }
+    }
+
+    bool IEquatable<MethodParameter>.Equals(MethodParameter other)
+    {
+        return this.Equals(other);
+    }
+
+    public static bool operator ==(MethodParameter left, MethodParameter right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(MethodParameter left, MethodParameter right)
+    {
+        return !(left == right);
+    }
 }

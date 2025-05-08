@@ -3,7 +3,7 @@ using AutoSDK.Naming.Properties;
 
 namespace AutoSDK.Models;
 
-public record struct PropertyData(
+public struct PropertyData(
     string Id,
     string Name,
     TypeData Type,
@@ -17,7 +17,7 @@ public record struct PropertyData(
     bool IsDeprecated,
     string Summary,
     string ConverterType,
-    string DiscriminatorValue)
+    string DiscriminatorValue) : IEquatable<PropertyData>
 {
     public static PropertyData Default => new(
         Id: string.Empty,
@@ -39,7 +39,7 @@ public record struct PropertyData(
     {
         context = context ?? throw new ArgumentNullException(nameof(context));
         var type = context.TypeData;
-        
+
         // OpenAPI doesn't allow metadata for references so sometimes allOf with single item is used to add metadata.
         if (context.HasAllOfTypeForMetadata() &&
             !type.SubTypes.IsEmpty)
@@ -54,7 +54,7 @@ public record struct PropertyData(
         var requiredProperties = context.Parent != null
             ? new HashSet<string>(context.Parent.Schema.Required)
             : [];
-        
+
         var propertyName = context.PropertyName ?? throw new InvalidOperationException("Property name or parameter name is required.");
         var isRequired =
             requiredProperties.Contains(propertyName) &&
@@ -64,7 +64,7 @@ public record struct PropertyData(
         {
             isRequired = false;
         }
-        
+
         return new PropertyData(
             Id: propertyName,
             Name: CSharpPropertyNameGenerator.ComputePropertyName(context),
@@ -81,7 +81,7 @@ public record struct PropertyData(
             DefaultValue: context.Schema is { ReadOnly: true } && !type.CSharpTypeNullability
                 ? "default!"
                 : context.GetDefaultValue(),
-            Example: context.Schema.Example?.GetString() is {} example &&
+            Example: context.Schema.Example?.GetString() is { } example &&
                      !string.IsNullOrWhiteSpace(example)
                 ? example.ClearForXml()
                 : null,
@@ -89,11 +89,11 @@ public record struct PropertyData(
             ConverterType: type.ConverterType,
             DiscriminatorValue: string.Empty);
     }
-    
+
     public string ParameterName => Name
         .Replace(".", string.Empty)
         .ToParameterName()
-        
+
         // https://learn.microsoft.com/en-us/dotnet/csharp/language-reference/keywords/
         .ReplaceIfEquals("abstract", "@abstract")
         .ReplaceIfEquals("as", "@as")
@@ -172,4 +172,80 @@ public record struct PropertyData(
         .ReplaceIfEquals("void", "@void")
         .ReplaceIfEquals("volatile", "@volatile")
         .ReplaceIfEquals("while", "@while");
+
+    public string Id { get; set; } = Id;
+    public string Name { get; set; } = Name;
+    public TypeData Type { get; set; } = Type;
+    public bool IsRequired { get; } = IsRequired;
+    public bool IsReadOnly { get; } = IsReadOnly;
+    public bool IsWriteOnly { get; } = IsWriteOnly;
+    public bool IsMultiPartFormDataFilename { get; set; } = IsMultiPartFormDataFilename;
+    public Settings Settings { get; set; } = Settings;
+    public string? DefaultValue { get; } = DefaultValue;
+    public string? Example { get; } = Example;
+    public bool IsDeprecated { get; } = IsDeprecated;
+    public string Summary { get; set; } = Summary;
+    public string ConverterType { get; } = ConverterType;
+    public string DiscriminatorValue { get; set; } = DiscriminatorValue;
+
+    public override bool Equals(object? obj)
+    {
+        if (obj is not PropertyData other)
+        {
+            return false;
+        }
+
+        return Id == other.Id &&
+               Name == other.Name &&
+               Type.Equals(other.Type) &&
+               IsRequired == other.IsRequired &&
+               IsReadOnly == other.IsReadOnly &&
+               IsWriteOnly == other.IsWriteOnly &&
+               IsMultiPartFormDataFilename == other.IsMultiPartFormDataFilename &&
+               Settings.Equals(other.Settings) &&
+               DefaultValue == other.DefaultValue &&
+               Example == other.Example &&
+               IsDeprecated == other.IsDeprecated &&
+               Summary == other.Summary &&
+               ConverterType == other.ConverterType &&
+               DiscriminatorValue == other.DiscriminatorValue;
+    }
+
+    public override int GetHashCode()
+    {
+        unchecked
+        {
+            int hash = 17;
+            hash = hash * 23 + Id.GetHashCode();
+            hash = hash * 23 + Name.GetHashCode();
+            hash = hash * 23 + Type.GetHashCode();
+            hash = hash * 23 + IsRequired.GetHashCode();
+            hash = hash * 23 + IsReadOnly.GetHashCode();
+            hash = hash * 23 + IsWriteOnly.GetHashCode();
+            hash = hash * 23 + IsMultiPartFormDataFilename.GetHashCode();
+            hash = hash * 23 + Settings.GetHashCode();
+            hash = hash * 23 + (DefaultValue?.GetHashCode() ?? 0);
+            hash = hash * 23 + (Example?.GetHashCode() ?? 0);
+            hash = hash * 23 + IsDeprecated.GetHashCode();
+            hash = hash * 23 + Summary.GetHashCode();
+            hash = hash * 23 + ConverterType.GetHashCode();
+            hash = hash * 23 + DiscriminatorValue.GetHashCode();
+            return hash;
+        }
+    }
+
+    public bool Equals(PropertyData other)
+    {
+        return this.Equals((object)other);
+    }
+
+    public static bool operator ==(PropertyData left, PropertyData right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(PropertyData left, PropertyData right)
+    {
+        return !(left == right);
+    }
 }
