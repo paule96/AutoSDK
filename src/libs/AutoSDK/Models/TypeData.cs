@@ -417,4 +417,37 @@ public struct TypeData(
     {
         return obj is TypeData && Equals((TypeData)obj);
     }
+
+    public override int GetHashCode()
+    {
+        unchecked
+        {
+            int hash = 17;
+            hash = hash * 23 + CSharpTypeRaw.GetHashCode();
+            hash = hash * 23 + CSharpTypeNullability.GetHashCode();
+            hash = hash * 23 + IsBaseClass.GetHashCode();
+            hash = hash * 23 + IsDerivedClass.GetHashCode();
+            hash = hash * 23 + IsArray.GetHashCode();
+            hash = hash * 23 + IsNullable.GetHashCode();
+            hash = hash * 23 + IsEnum.GetHashCode();
+            hash = hash * 23 + IsBase64.GetHashCode();
+            hash = hash * 23 + IsDate.GetHashCode();
+            hash = hash * 23 + IsDateTime.GetHashCode();
+            hash = hash * 23 + IsBinary.GetHashCode();
+            hash = hash * 23 + IsValueType.GetHashCode();
+            hash = hash * 23 + IsUnixTimestamp.GetHashCode();
+            hash = hash * 23 + AnyOfCount.GetHashCode();
+            hash = hash * 23 + OneOfCount.GetHashCode();
+            hash = hash * 23 + AllOfCount.GetHashCode();
+            hash = hash * 23 + IsComponent.GetHashCode();
+            hash = hash * 23 + HasDiscriminator.GetHashCode();
+            hash = hash * 23 + Properties.GetHashCode();
+            hash = hash * 23 + EnumValues.GetHashCode();
+            hash = hash * 23 + SubTypes.GetHashCode();
+            hash = hash * 23 + Namespace.GetHashCode();
+            hash = hash * 23 + IsDeprecated.GetHashCode();
+            hash = hash * 23 + Settings.GetHashCode();
+            return hash;
+        }
+    }
 }

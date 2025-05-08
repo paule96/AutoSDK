@@ -234,9 +234,9 @@ public struct PropertyData(
         }
     }
 
-    public bool Equals(PropertyData other)
+    bool IEquatable<PropertyData>.Equals(PropertyData other)
     {
-        return this.Equals((object)other);
+        return this.Equals(other);
     }
 
     public static bool operator ==(PropertyData left, PropertyData right)

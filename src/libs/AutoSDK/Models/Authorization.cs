@@ -105,11 +105,6 @@ public struct Authorization(
                OpenIdConnectUrl == other.OpenIdConnectUrl;
     }
 
-    public bool Equals(Authorization other)
-    {
-        return this.Equals(other);
-    }
-
     public override int GetHashCode()
     {
         unchecked
@@ -126,6 +121,11 @@ public struct Authorization(
             hash = hash * 23 + OpenIdConnectUrl.GetHashCode();
             return hash;
         }
+    }
+
+    bool IEquatable<Authorization>.Equals(Authorization other)
+    {
+        return this.Equals(other);
     }
 
     public static bool operator ==(Authorization left, Authorization right)

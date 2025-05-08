@@ -74,20 +74,6 @@ public struct ModelData(
             );
     }
 
-    public bool Equals(ModelData other)
-    {
-        return Id == other.Id &&
-               Namespace == other.Namespace &&
-               Settings.Equals(other.Settings) &&
-               Style == other.Style &&
-               IsDeprecated == other.IsDeprecated &&
-               BaseClass == other.BaseClass &&
-               IsBaseClass == other.IsBaseClass &&
-               IsDerivedClass == other.IsDerivedClass &&
-               DiscriminatorPropertyName == other.DiscriminatorPropertyName &&
-               DerivedTypes.SequenceEqual(other.DerivedTypes);
-    }
-
     public string ClassName => Id;// Settings.NamingConvention switch
     // {
     //     NamingConvention.ConcatNames => Parents.IsEmpty ? Name : $"{Parents.Last().ClassName}{Name}",
@@ -121,4 +107,67 @@ public struct ModelData(
     public bool IsDerivedClass { get; } = IsDerivedClass;
     public string DiscriminatorPropertyName { get; } = DiscriminatorPropertyName;
     public EquatableArray<(string ClassName, string Discriminator)> DerivedTypes { get; } = DerivedTypes;
+
+    public override bool Equals(object obj)
+    {
+        if (obj is not ModelData other)
+        {
+            return false;
+        }
+
+        return Id == other.Id &&
+               Namespace == other.Namespace &&
+               Properties.SequenceEqual(other.Properties) &&
+               EnumValues.SequenceEqual(other.EnumValues) &&
+               IsDeprecated == other.IsDeprecated &&
+               BaseClass == other.BaseClass &&
+               IsBaseClass == other.IsBaseClass &&
+               IsDerivedClass == other.IsDerivedClass &&
+               DiscriminatorPropertyName == other.DiscriminatorPropertyName &&
+               DerivedTypes.SequenceEqual(other.DerivedTypes);
+    }
+
+    public override int GetHashCode()
+    {
+        unchecked
+        {
+            int hash = 17;
+            hash = hash * 23 + Id.GetHashCode();
+            hash = hash * 23 + Namespace.GetHashCode();
+            hash = hash * 23 + IsDeprecated.GetHashCode();
+            hash = hash * 23 + BaseClass.GetHashCode();
+            hash = hash * 23 + IsBaseClass.GetHashCode();
+            hash = hash * 23 + IsDerivedClass.GetHashCode();
+            hash = hash * 23 + DiscriminatorPropertyName.GetHashCode();
+            foreach (var derivedType in DerivedTypes)
+            {
+                hash = hash * 23 + derivedType.ClassName.GetHashCode();
+                hash = hash * 23 + derivedType.Discriminator.GetHashCode();
+            }
+            foreach (var property in Properties)
+            {
+                hash = hash * 23 + property.GetHashCode();
+            }
+            foreach (var enumValue in EnumValues)
+            {
+                hash = hash * 23 + enumValue.GetHashCode();
+            }
+            return hash;
+        }
+    }
+
+    bool IEquatable<ModelData>.Equals(ModelData other)
+    {
+        return this.Equals(other);
+    }
+
+    public static bool operator ==(ModelData left, ModelData right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(ModelData left, ModelData right)
+    {
+        return !(left == right);
+    }
 }
