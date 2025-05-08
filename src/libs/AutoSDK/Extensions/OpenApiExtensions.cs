@@ -1,16 +1,16 @@
-using System.Collections.Immutable;
-using System.Globalization;
 using AutoSDK.Helpers;
+using AutoSDK.Models;
+using AutoSDK.Naming.Properties;
+using AutoSDK.Serialization.Form;
 using Microsoft.OpenApi;
 using Microsoft.OpenApi.Any;
 using Microsoft.OpenApi.Extensions;
 using Microsoft.OpenApi.Interfaces;
 using Microsoft.OpenApi.Models;
 using Microsoft.OpenApi.Readers;
-using AutoSDK.Models;
-using AutoSDK.Naming.Properties;
-using AutoSDK.Serialization.Form;
 using Microsoft.OpenApi.Validations;
+using System.Collections.Immutable;
+using System.Globalization;
 
 namespace AutoSDK.Extensions;
 
@@ -22,14 +22,16 @@ public static class OpenApiExtensions
         CancellationToken cancellationToken = default)
     {
         yamlOrJson = yamlOrJson ?? throw new ArgumentNullException(nameof(yamlOrJson));
-        
+
         if (OpenApi31Support.IsOpenApi31(yamlOrJson))
         {
             yamlOrJson = OpenApi31Support.ConvertToOpenApi30(yamlOrJson);
-            
+
+#pragma warning disable RS1035 // Do not use APIs banned for analyzers
             Console.WriteLine("Microsoft.OpenAPI currently doesn't support OpenAPI 3.1.0. Converting to OpenAPI 3.0.3. It may not work correctly.");
+#pragma warning restore RS1035 // Do not use APIs banned for analyzers
         }
-        
+
         var openApiDocument = new OpenApiStringReader(new OpenApiReaderSettings
         {
             RuleSet = ValidationRuleSet.GetEmptyRuleSet(),
@@ -58,15 +60,15 @@ public static class OpenApiExtensions
         {
             openApiDocument = openApiDocument.AddMissingPathParameters();
         }
-        
+
         return openApiDocument;
     }
-    
+
     public static OpenApiDocument Simplify(
         this OpenApiDocument openApiDocument)
     {
         openApiDocument = openApiDocument ?? throw new ArgumentNullException(nameof(openApiDocument));
-        
+
         var schemasToRemove = new List<KeyValuePair<string, OpenApiSchema>>();
         var schemasToAdd = new List<KeyValuePair<string, OpenApiSchema>>();
         foreach (var schema in openApiDocument.Components.Schemas)
@@ -110,7 +112,7 @@ public static class OpenApiExtensions
                             },
                         });
                     child.Properties.Add(newSubChild);
-                    
+
                     newSubChild.Value.Extensions["x-original-schema"] = new OpenApiString(
                         subChild.Value.SerializeAsYaml(OpenApiSpecVersion.OpenApi3_0));
                 }
@@ -139,7 +141,7 @@ public static class OpenApiExtensions
                         schema.Value.OneOf.Remove(duplicatedSchema);
                     }
                 }
-                
+
                 // Simplify OneOf with only one schema.
                 if (schema.Value.OneOf.Count == 1)
                 {
@@ -158,15 +160,15 @@ public static class OpenApiExtensions
         {
             openApiDocument.Components.Schemas.Add(schema);
         }
-        
+
         return openApiDocument;
     }
-    
+
     public static OpenApiDocument SimplifyAllOf(
         this OpenApiDocument openApiDocument)
     {
         openApiDocument = openApiDocument ?? throw new ArgumentNullException(nameof(openApiDocument));
-        
+
         foreach (var schema in openApiDocument.Components.Schemas)
         {
             var propertiesToAdd = new List<KeyValuePair<string, OpenApiSchema>>();
@@ -180,7 +182,7 @@ public static class OpenApiExtensions
                     propertiesToRemove.Add(property);
                 }
             }
-            
+
             foreach (var property in propertiesToRemove)
             {
                 schema.Value.Properties.Remove(property);
@@ -190,28 +192,28 @@ public static class OpenApiExtensions
                 schema.Value.Properties.Add(property);
             }
         }
-        
+
         return openApiDocument;
     }
-    
+
     public static OpenApiDocument ComputeDiscriminators(
         this OpenApiDocument openApiDocument)
     {
         openApiDocument = openApiDocument ?? throw new ArgumentNullException(nameof(openApiDocument));
-        
+
         foreach (var schema in openApiDocument.Components.Schemas)
         {
             ProcessSchema(schema.Value, path: $"#/components/schemas/{schema.Key}", depth: 0);
         }
-        
+
         return openApiDocument;
     }
-    
+
     public static OpenApiDocument AddMissingPathParameters(
         this OpenApiDocument openApiDocument)
     {
         openApiDocument = openApiDocument ?? throw new ArgumentNullException(nameof(openApiDocument));
-        
+
         foreach (var path in openApiDocument.Paths)
         {
             foreach (var operation in path.Value.Operations)
@@ -236,13 +238,15 @@ public static class OpenApiExtensions
                                 Type = "string",
                             },
                         });
-                        
+
+#pragma warning disable RS1035 // Do not use APIs banned for analyzers
                         Console.WriteLine($"Missing path parameter '{parameter}' was added to operation '{operation.Key}' in path '{path.Key}'.");
+#pragma warning restore RS1035 // Do not use APIs banned for analyzers
                     }
                 }
             }
         }
-        
+
         return openApiDocument;
     }
 
@@ -252,12 +256,12 @@ public static class OpenApiExtensions
         {
             return;
         }
-        
+
         if (schema.Reference?.Id != null)
         {
             path = $"#/components/schemas/{schema.Reference?.Id}";
         }
-            
+
         foreach (var property in schema.Properties)
         {
             ProcessSchema(property.Value, path: path + "/properties/" + property.Key, depth: depth + 1);
@@ -283,7 +287,7 @@ public static class OpenApiExtensions
             }
         });
         schemasToAdd.ForEach(x => schema.OneOf.Add(x));
-        
+
         foreach (var value in schema.OneOf)
         {
             ProcessSchema(value, path: path + "/oneOf", depth: depth + 1);
@@ -300,7 +304,7 @@ public static class OpenApiExtensions
         {
             ProcessSchema(schema.Items, path: path + "/items", depth: depth + 1);
         }
-            
+
         // Auto-detection in OpenAI-like specs
         if (schema.Discriminator == null &&
             schema.OneOf.Count > 1 &&
@@ -340,18 +344,18 @@ public static class OpenApiExtensions
     {
         path = path ?? throw new ArgumentNullException(nameof(path));
         parameters = parameters ?? throw new ArgumentNullException(nameof(parameters));
-        
+
         path = ParameterSerializer.SerializePathParameters(parameters, path);
-        
+
         path = $"\"{path}\"";
         if (parameters.Any(x => x.Location is ParameterLocation.Path))
         {
             path = $"${path}";
         }
-        
+
         return path;
     }
-    
+
     /// <summary>
     /// OpenAPI doesn't allow metadata for references so sometimes allOf with single item is used to add metadata.
     /// </summary>
@@ -362,7 +366,7 @@ public static class OpenApiExtensions
         this SchemaContext context)
     {
         context = context ?? throw new ArgumentNullException(nameof(context));
-        
+
         return context.Schema.HasAllOfTypeForMetadata(propertyName: context.PropertyName);
     }
 
@@ -378,18 +382,18 @@ public static class OpenApiExtensions
         string? propertyName)
     {
         schema = schema ?? throw new ArgumentNullException(nameof(schema));
-        
+
         return propertyName is not null &&
                (schema.AnyOf?.Count == 1 ||
                schema.AllOf?.Count == 1 ||
                schema.OneOf?.Count == 1) &&
                schema.Properties.Count == 0;
     }
-    
+
     public static string? GetDefaultValue(this SchemaContext context)
     {
         context = context ?? throw new ArgumentNullException(nameof(context));
-        
+
         if (context.TypeData.CSharpType == "object?" ||
             context.Schema.Default is OpenApiArray ||
             context.TypeData.CSharpTypeNullability)
@@ -432,10 +436,10 @@ public static class OpenApiExtensions
                         return $"\"{value}\"";
                     }
                 }
-                
+
                 return null;
             }
-            
+
             return enumChildContext.TypeData.CSharpTypeWithoutNullability + "." + value;
         }
         if (context.Schema.OneOf.Any(x => x.Enum.Any()) && context.Schema.Default != null)
@@ -448,7 +452,7 @@ public static class OpenApiExtensions
             {
                 return string.Empty;
             }
-            
+
             return enumChildContext.TypeData.CSharpTypeWithoutNullability + "." + result.Name;
         }
         if (context.Schema.AllOf.Any(x => x.Enum.Any()) && context.Schema.Default != null)
@@ -461,17 +465,17 @@ public static class OpenApiExtensions
             {
                 return string.Empty;
             }
-            
+
             return enumChildContext.TypeData.CSharpTypeWithoutNullability + "." + result.Name;
         }
         if (context.Schema.Default is OpenApiString @string && !string.IsNullOrWhiteSpace(@string.Value))
         {
             return $"\"{@string.Value}\"";
         }
-        
+
         return context.Schema.Default?.GetString();
     }
-    
+
     public static string GetSummary(this OpenApiSchema schema)
     {
         schema = schema ?? throw new ArgumentNullException(nameof(schema));
@@ -488,7 +492,7 @@ public static class OpenApiExtensions
 
             summary += $"Default Value: {@default}";
         }
-        
+
         if (schema.ReadOnly)
         {
             if (!string.IsNullOrWhiteSpace(summary))
@@ -535,7 +539,7 @@ public static class OpenApiExtensions
             {
                 summary += "\n";
             }
-            
+
             summary += $"{description}";
         }
 
@@ -573,13 +577,13 @@ public static class OpenApiExtensions
         {
             return @string.Value;
         }
-        
+
         operation.Extensions.TryGetValue("x-alpha", out var alpha);
         if (alpha is OpenApiBoolean { Value: true })
         {
             return "Alpha";
         }
-        
+
         operation.Extensions.TryGetValue("x-beta", out var beta);
         if (beta is OpenApiBoolean { Value: true })
         {
@@ -621,7 +625,7 @@ public static class OpenApiExtensions
     public static T ResolveIfRequired<T>(this T referenceable) where T : class, IOpenApiReferenceable
     {
         referenceable = referenceable ?? throw new ArgumentNullException(nameof(referenceable));
-        
+
         return referenceable.Reference?.HostDocument?.ResolveReference(referenceable.Reference) as T ?? referenceable;
     }
 
@@ -636,7 +640,7 @@ public static class OpenApiExtensions
         this string text)
     {
         text = text ?? throw new ArgumentNullException(nameof(text));
-        
+
         text = text.StartsWith("-", StringComparison.Ordinal)
             ? "Minus" + text.TrimStart('-')
             : text;
@@ -646,17 +650,17 @@ public static class OpenApiExtensions
 
         return text;
     }
-    
+
     public static Dictionary<string, PropertyData> ComputeEnum(
         this SchemaContext context)
     {
         context = context ?? throw new ArgumentNullException(nameof(context));
-        
+
         var @enum = context.Schema.Enum.ComputeEnum(
             enumName: context.Id,
             description: context.Parameter?.Description ?? context.Schema.Description ?? string.Empty,
             context.Settings);
-        
+
         if (context.Schema.Extensions.TryGetValue("x-enum-descriptions", out var descriptions) &&
             descriptions is OpenApiArray descriptionsArray)
         {
@@ -676,7 +680,7 @@ public static class OpenApiExtensions
 
         return @enum;
     }
-    
+
     public static Dictionary<string, PropertyData> ComputeEnum(
         this IList<IOpenApiAny> @enum,
         string enumName,
@@ -707,17 +711,17 @@ public static class OpenApiExtensions
 
         return values;
     }
-    
+
     public static PropertyData ToEnumValue(
         this IOpenApiAny any,
         string description,
         Settings settings)
     {
         var id = any.GetString() ?? string.Empty;
-        
+
         return id.ToEnumValue(description, settings);
     }
-    
+
     public static PropertyData ToEnumValue(
         this string id,
         string description,
@@ -756,10 +760,10 @@ public static class OpenApiExtensions
         {
             return string.Empty;
         }
-        
+
         var lines = description.Split(["\n"], StringSplitOptions.RemoveEmptyEntries);
         var line = lines.FirstOrDefault(line => line.Contains(id) && line.Contains(":"));
-        
+
         if (line == null)
             return string.Empty;
 
@@ -768,13 +772,13 @@ public static class OpenApiExtensions
             ? line.Substring(index + 1).Trim()
             : line.Trim();
     }
-    
+
     public static string[] FindAllOperationIdsForTag(
         this OpenApiDocument openApiDocument,
         string tag)
     {
         openApiDocument = openApiDocument ?? throw new ArgumentNullException(nameof(openApiDocument));
-        
+
         return openApiDocument.Paths!
             .SelectMany(path => path.Value.Operations)
             .Where(x => x.Value.Tags?.Any(y => y.Name == tag) != false)

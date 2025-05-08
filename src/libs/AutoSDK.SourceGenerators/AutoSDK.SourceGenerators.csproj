@@ -25,20 +25,49 @@
   <ItemGroup>
     <None Include="$(AssemblyName).props" Pack="true" PackagePath="build" />
     <None Include="$(OutputPath)\$(AssemblyName).dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-    <None Include="$(OutputPath)\Microsoft.CodeAnalysis.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+   <!-- <None Include="$(OutputPath)\Microsoft.CodeAnalysis.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     <None Include="$(OutputPath)\Microsoft.OpenApi.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     <None Include="$(OutputPath)\Microsoft.OpenApi.Readers.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     <None Include="$(OutputPath)\SharpYaml.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     <None Include="$(OutputPath)\System.Collections.Immutable.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
     <None Include="$(OutputPath)\System.Text.Encodings.Web.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
-    <None Include="$(OutputPath)\System.Text.Json.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(OutputPath)\System.Text.Json.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />-->
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.3.1" PrivateAssets="all" />
-    <PackageReference Include="Microsoft.OpenApi.Readers" Version="1.6.23" PrivateAssets="all" />
-    <PackageReference Include="System.Collections.Immutable" Version="9.0.4" PrivateAssets="all" />
-    <PackageReference Include="System.Text.Json" Version="9.0.4" PrivateAssets="all" />
+    <None Include="$(PkgMicrosoft_CodeAnalysis_CSharp)/lib/netstandard2.0/*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(PkgMicrosoft_NETCore_Platforms)/lib/netstandard2.0/*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(PkgMicrosoft_OpenApi)/lib/netstandard2.0/*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(PkgMicrosoft_OpenApi_Readers)/lib/netstandard2.0/*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(PkgSystem_Buffers)/lib/netstandard2.0/*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(PkgSystem_Collections_Immutable)/lib/netstandard2.0/*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(PkgSystem_Memory)/lib/netstandard2.0/*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(PkgSystem_Numerics_Vectors)/lib/netstandard2.0/*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(PkgSystem_Reflection_Metadata)/lib/netstandard2.0/*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(PkgSystem_Runtime_CompilerServices_Unsafe)/lib/netstandard2.0/*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(PkgSystem_Text_Encoding_CodePages)/lib/netstandard2.0/*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(PkgSystem_Text_Json)/lib/netstandard2.0/*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+    <None Include="$(PkgSystem_Threading_Tasks_Extensions)/lib/netstandard2.0/*.dll" Pack="true" PackagePath="analyzers/dotnet/cs" Visible="false" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.CodeAnalysis.Analyzers" GeneratePathProperty="true" Version="3.11.0">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" GeneratePathProperty="true" Version="4.13.0" PrivateAssets="all" />
+    <PackageReference Include="Microsoft.NETCore.Platforms" GeneratePathProperty="true" Version="7.0.4" />
+    <PackageReference Include="Microsoft.OpenApi" GeneratePathProperty="true" Version="1.6.24" />
+    <PackageReference Include="Microsoft.OpenApi.Readers" GeneratePathProperty="true" Version="1.6.24" PrivateAssets="all" />
+    <PackageReference Include="System.Buffers" GeneratePathProperty="true" Version="4.6.1" />
+    <PackageReference Include="System.Collections.Immutable" GeneratePathProperty="true" Version="9.0.4" PrivateAssets="all" />
+    <PackageReference Include="System.Memory" GeneratePathProperty="true" Version="4.6.3" />
+    <PackageReference Include="System.Numerics.Vectors" GeneratePathProperty="true" Version="4.6.1" />
+    <PackageReference Include="System.Reflection.Metadata" GeneratePathProperty="true" Version="9.0.4" />
+    <PackageReference Include="System.Runtime.CompilerServices.Unsafe" GeneratePathProperty="true" Version="6.1.2" />
+    <PackageReference Include="System.Text.Encoding.CodePages" GeneratePathProperty="true" Version="9.0.4" />
+    <PackageReference Include="System.Text.Json" GeneratePathProperty="true" Version="9.0.4" PrivateAssets="all" />
+    <PackageReference Include="System.Threading.Tasks.Extensions" GeneratePathProperty="true" Version="4.6.3" />
   </ItemGroup>
   
 </Project>
