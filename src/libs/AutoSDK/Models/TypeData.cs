@@ -376,78 +376,45 @@ public struct TypeData(
 
     public static bool operator ==(TypeData a, TypeData b)
     {
-        // Check if both objects are the same instance
-        if (ReferenceEquals(a, b)) return true;
-
-        // Check if either is null
-        if (ReferenceEquals(a, null) || ReferenceEquals(b, null)) return false;
-
-        // Compare all fields for equality
-        return a.CSharpTypeRaw == b.CSharpTypeRaw &&
-               a.CSharpTypeNullability == b.CSharpTypeNullability &&
-               a.IsBaseClass == b.IsBaseClass &&
-               a.IsDerivedClass == b.IsDerivedClass &&
-               a.IsArray == b.IsArray &&
-               a.IsNullable == b.IsNullable &&
-               a.IsEnum == b.IsEnum &&
-               a.IsBase64 == b.IsBase64 &&
-               a.IsDate == b.IsDate &&
-               a.IsDateTime == b.IsDateTime &&
-               a.IsBinary == b.IsBinary &&
-               a.IsValueType == b.IsValueType &&
-               a.IsUnixTimestamp == b.IsUnixTimestamp &&
-               a.AnyOfCount == b.AnyOfCount &&
-               a.OneOfCount == b.OneOfCount &&
-               a.AllOfCount == b.AllOfCount &&
-               a.IsComponent == b.IsComponent &&
-               a.HasDiscriminator == b.HasDiscriminator &&
-               a.Properties.Equals(b.Properties) &&
-               a.EnumValues.Equals(b.EnumValues) &&
-               a.SubTypes.Equals(b.SubTypes) &&
-               a.Namespace == b.Namespace &&
-               a.IsDeprecated == b.IsDeprecated &&
-               a.Settings.Equals(b.Settings);
+        return a.Equals(b);
     }
     public static bool operator !=(TypeData a, TypeData b)
     {
         return !(a == b);
     }
 
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
-        return obj is TypeData && Equals((TypeData)obj);
+        return obj is TypeData data && Equals(data);
     }
 
     public override int GetHashCode()
     {
-        unchecked
-        {
-            int hash = 17;
-            hash = hash * 23 + CSharpTypeRaw.GetHashCode();
-            hash = hash * 23 + CSharpTypeNullability.GetHashCode();
-            hash = hash * 23 + IsBaseClass.GetHashCode();
-            hash = hash * 23 + IsDerivedClass.GetHashCode();
-            hash = hash * 23 + IsArray.GetHashCode();
-            hash = hash * 23 + IsNullable.GetHashCode();
-            hash = hash * 23 + IsEnum.GetHashCode();
-            hash = hash * 23 + IsBase64.GetHashCode();
-            hash = hash * 23 + IsDate.GetHashCode();
-            hash = hash * 23 + IsDateTime.GetHashCode();
-            hash = hash * 23 + IsBinary.GetHashCode();
-            hash = hash * 23 + IsValueType.GetHashCode();
-            hash = hash * 23 + IsUnixTimestamp.GetHashCode();
-            hash = hash * 23 + AnyOfCount.GetHashCode();
-            hash = hash * 23 + OneOfCount.GetHashCode();
-            hash = hash * 23 + AllOfCount.GetHashCode();
-            hash = hash * 23 + IsComponent.GetHashCode();
-            hash = hash * 23 + HasDiscriminator.GetHashCode();
-            hash = hash * 23 + Properties.GetHashCode();
-            hash = hash * 23 + EnumValues.GetHashCode();
-            hash = hash * 23 + SubTypes.GetHashCode();
-            hash = hash * 23 + Namespace.GetHashCode();
-            hash = hash * 23 + IsDeprecated.GetHashCode();
-            hash = hash * 23 + Settings.GetHashCode();
-            return hash;
-        }
+        HashCode hash = new HashCode();
+        hash.Add(CSharpTypeRaw);
+        hash.Add(CSharpTypeNullability);
+        hash.Add(IsBaseClass);
+        hash.Add(IsDerivedClass);
+        hash.Add(IsArray);
+        hash.Add(IsNullable);
+        hash.Add(IsEnum);
+        hash.Add(IsBase64);
+        hash.Add(IsDate);
+        hash.Add(IsDateTime);
+        hash.Add(IsBinary);
+        hash.Add(IsValueType);
+        hash.Add(IsUnixTimestamp);
+        hash.Add(AnyOfCount);
+        hash.Add(OneOfCount);
+        hash.Add(AllOfCount);
+        hash.Add(IsComponent);
+        hash.Add(HasDiscriminator);
+        hash.Add(Properties);
+        hash.Add(EnumValues);
+        hash.Add(SubTypes);
+        hash.Add(Namespace);
+        hash.Add(IsDeprecated);
+        hash.Add(Settings);
+        return hash.ToHashCode();
     }
 }

@@ -7,7 +7,7 @@
 /// <param name="Text"></param>
 public struct FileWithName(
     string Name,
-    string Text)
+    string Text) : IEquatable<FileWithName>
 {
     /// <summary>
     /// 
@@ -24,7 +24,7 @@ public struct FileWithName(
     public string Name { get; } = Name;
     public string Text { get; } = Text;
 
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         if (obj is FileWithName other)
         {
@@ -42,6 +42,11 @@ public struct FileWithName(
             hash = hash * 23 + (Text?.GetHashCode() ?? 0);
             return hash;
         }
+    }
+
+    bool IEquatable<FileWithName>.Equals(FileWithName other)
+    {
+        return this.Equals(other);
     }
 
     public static bool operator ==(FileWithName left, FileWithName right)

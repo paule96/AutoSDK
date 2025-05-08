@@ -8,7 +8,7 @@ public struct Times(
     TimeSpan ComputeData,
     TimeSpan ComputeDataClasses,
     TimeSpan Total
-)
+) : IEquatable<Times>
 {
     public TimeSpan TraversalTree { get; } = TraversalTree;
     public TimeSpan Naming { get; } = Naming;
@@ -18,7 +18,7 @@ public struct Times(
     public TimeSpan ComputeDataClasses { get; } = ComputeDataClasses;
     public TimeSpan Total { get; } = Total;
 
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         if (obj is not Times other)
         {
@@ -48,6 +48,11 @@ public struct Times(
             hash = hash * 23 + Total.GetHashCode();
             return hash;
         }
+    }
+
+    bool IEquatable<Times>.Equals(Times other)
+    {
+        return this.Equals(other);
     }
 
     public static bool operator ==(Times left, Times right)

@@ -11,7 +11,7 @@ public struct Data(
     Client Converters,
     IReadOnlyList<SchemaContext> Schemas,
     IReadOnlyList<SchemaContext> FilteredSchemas,
-    Times Times)
+    Times Times) : IEquatable<Data>
 {
     public EquatableArray<ModelData> Classes { get; } = Classes;
     public EquatableArray<ModelData> Enums { get; } = Enums;
@@ -25,7 +25,7 @@ public struct Data(
     public IReadOnlyList<SchemaContext> FilteredSchemas { get; } = FilteredSchemas;
     public Times Times { get; } = Times;
 
-    public override bool Equals(object obj)
+    public override bool Equals(object? obj)
     {
         if (obj is not Data other)
         {
@@ -65,6 +65,11 @@ public struct Data(
         hash = (hash ^ Times.GetHashCode()) * prime;
 
         return hash;
+    }
+
+    bool IEquatable<Data>.Equals(Data other)
+    {
+        return this.Equals(other);
     }
 
     public static bool operator ==(Data left, Data right)

@@ -46,7 +46,7 @@ public struct Settings(
     bool GenerateExceptions,
 
     bool GenerateSdk,
-    bool FromCli)
+    bool FromCli) : IEquatable<Settings>
 {
     public static Settings Default => new(
         TargetFramework: "net8.0",
@@ -234,6 +234,11 @@ public struct Settings(
             hash = hash * 23 + FromCli.GetHashCode();
             return hash;
         }
+    }
+
+    bool IEquatable<Settings>.Equals(Settings other)
+    {
+        return this.Equals(other);
     }
 
     public static bool operator ==(Settings left, Settings right)
