@@ -1,5 +1,6 @@
 ﻿using AutoSDK.Generation;
 using Microsoft.CodeAnalysis;
+using System.Net.Http;
 
 namespace AutoSDK.SourceGenerators;
 
@@ -33,7 +34,7 @@ public class SdkGenerator : IIncrementalGenerator
             .SelectAndReportExceptions((x, c) => Sources.UnixTimestampJsonConverter(x, c)
                 .AsFileWithName(), context, Id)
             .AddSource(context);
-        
+
         var data = context.AdditionalTextsProvider
             .Combine(context.AnalyzerConfigOptionsProvider)
             .Where(static pair =>
@@ -41,7 +42,7 @@ public class SdkGenerator : IIncrementalGenerator
             .Select(static (pair, cancellationToken) => GetContent(pair.Left, cancellationToken))
             .Combine(settings)
             .SelectAndReportExceptions(Data.Prepare, context, Id);
-        
+
         data
             .SelectMany(static (x, _) => x.Methods)
             .SelectAndReportExceptions((x, c) => Sources.Method(x, c)
@@ -77,7 +78,7 @@ public class SdkGenerator : IIncrementalGenerator
             .SelectAndReportExceptions((x, c) => Sources.MainAuthorizationConstructor(x, c)
                 .AsFileWithName(), context, Id)
             .AddSource(context);
-        
+
         data
             .SelectMany(static (x, _) => x.Classes)
             .SelectAndReportExceptions((x, c) => Sources.Class(x, c)
@@ -88,7 +89,7 @@ public class SdkGenerator : IIncrementalGenerator
             .SelectAndReportExceptions((x, c) => Sources.ClassJsonExtensions(x, c)
                 .AsFileWithName(), context, Id)
             .AddSource(context);
-        
+
         data
             .SelectMany(static (x, _) => x.Enums)
             .SelectAndReportExceptions((x, c) => Sources.Enum(x, c)
@@ -99,7 +100,7 @@ public class SdkGenerator : IIncrementalGenerator
             .SelectAndReportExceptions((x, c) => Sources.JsonSerializerContextTypes(x, c)
                 .AsFileWithName(), context, Id)
             .AddSource(context);
-    
+
         data
             .SelectMany(static (x, _) => x.Enums)
             .SelectAndReportExceptions((x, c) => Sources.EnumJsonConverter(x, c)
@@ -110,7 +111,7 @@ public class SdkGenerator : IIncrementalGenerator
             .SelectAndReportExceptions((x, c) => Sources.EnumNullableJsonConverter(x, c)
                 .AsFileWithName(), context, Id)
             .AddSource(context);
-        
+
         data
             .SelectMany(static (x, _) => x.AnyOfs)
             .SelectAndReportExceptions((x, c) => Sources.AnyOf(x, c)
@@ -131,7 +132,7 @@ public class SdkGenerator : IIncrementalGenerator
         //     .SelectAndReportExceptions((x, c) => Sources.AnyOfJsonConverterFactory(x, c)
         //         .AsFileWithName(), context, Id)
         //     .AddSource(context);
-        
+
         data
             .Select(static (x, _) => x.Converters)
             .SelectAndReportExceptions((x, c) => Sources.JsonSerializerContextConverters(x, c)
@@ -145,6 +146,6 @@ public class SdkGenerator : IIncrementalGenerator
             ? Task.Run(() => new HttpClient().GetStringAsync(new Uri(additionalText.Path)), cancellationToken).Result
             : additionalText.GetText(cancellationToken)?.ToString() ?? string.Empty;
     }
-    
+
     #endregion
 }
