@@ -1,9 +1,9 @@
-using System.Collections.Immutable;
 using AutoSDK.Extensions;
+using System.Collections.Immutable;
 
 namespace AutoSDK.Models;
 
-public record struct ModelData(
+public struct ModelData(
     SchemaContext SchemaContext,
     string Id,
     ImmutableArray<ModelData> Parents,
@@ -19,13 +19,13 @@ public record struct ModelData(
     bool IsDerivedClass,
     string DiscriminatorPropertyName,
     EquatableArray<(string ClassName, string Discriminator)> DerivedTypes
-)
+) : IEquatable<ModelData>
 {
     public static ModelData FromSchemaContext(
         SchemaContext context)
     {
         context = context ?? throw new ArgumentNullException(nameof(context));
-        
+
         var parents = new List<ModelData>();
         var parent = context.Parent;
         while (parent != null)
@@ -38,7 +38,7 @@ public record struct ModelData(
         }
 
         parents.Reverse();
-        
+
         return new ModelData(
             SchemaContext: context,
             Id: context.Id,
@@ -74,6 +74,20 @@ public record struct ModelData(
             );
     }
 
+    public bool Equals(ModelData other)
+    {
+        return Id == other.Id &&
+               Namespace == other.Namespace &&
+               Settings.Equals(other.Settings) &&
+               Style == other.Style &&
+               IsDeprecated == other.IsDeprecated &&
+               BaseClass == other.BaseClass &&
+               IsBaseClass == other.IsBaseClass &&
+               IsDerivedClass == other.IsDerivedClass &&
+               DiscriminatorPropertyName == other.DiscriminatorPropertyName &&
+               DerivedTypes.SequenceEqual(other.DerivedTypes);
+    }
+
     public string ClassName => Id;// Settings.NamingConvention switch
     // {
     //     NamingConvention.ConcatNames => Parents.IsEmpty ? Name : $"{Parents.Last().ClassName}{Name}",
@@ -82,13 +96,29 @@ public record struct ModelData(
     // };
 
     public string GlobalClassName => $"global::{Namespace}.{ClassName}";
-    
+
     public string ExternalClassName => Settings.NamingConvention switch
     {
         NamingConvention.ConcatNames => ClassName,
         NamingConvention.InnerClasses => string.Join(".", Parents.Select(x => x.ClassName).Concat([ClassName])),
         _ => string.Empty,
     };
-    
+
     public string FileNameWithoutExtension => $"{Namespace}.Models.{ExternalClassName}";
+
+    public SchemaContext SchemaContext { get; set; } = SchemaContext;
+    public string Id { get; } = Id;
+    public ImmutableArray<ModelData> Parents { get; } = Parents;
+    public string Namespace { get; } = Namespace;
+    public Settings Settings { get; } = Settings;
+    public ModelStyle Style { get; } = Style;
+    public ImmutableArray<PropertyData> Properties { get; } = Properties;
+    public ImmutableArray<PropertyData> EnumValues { get; } = EnumValues;
+    public string Summary { get; } = Summary;
+    public bool IsDeprecated { get; } = IsDeprecated;
+    public string BaseClass { get; } = BaseClass;
+    public bool IsBaseClass { get; } = IsBaseClass;
+    public bool IsDerivedClass { get; } = IsDerivedClass;
+    public string DiscriminatorPropertyName { get; } = DiscriminatorPropertyName;
+    public EquatableArray<(string ClassName, string Discriminator)> DerivedTypes { get; } = DerivedTypes;
 }

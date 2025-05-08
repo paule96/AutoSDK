@@ -1,9 +1,9 @@
-using System.Collections.Immutable;
 using AutoSDK.Extensions;
+using System.Collections.Immutable;
 
 namespace AutoSDK.Models;
 
-public record struct TypeData(
+public struct TypeData(
     string CSharpTypeRaw,
     bool CSharpTypeNullability,
     bool IsBaseClass,
@@ -27,7 +27,7 @@ public record struct TypeData(
     EquatableArray<TypeData> SubTypes,
     string Namespace,
     bool IsDeprecated,
-    Settings Settings)
+    Settings Settings) : IEquatable<TypeData>
 {
     public static TypeData Default => new(
         CSharpTypeRaw: string.Empty,
@@ -54,7 +54,7 @@ public record struct TypeData(
         Namespace: string.Empty,
         IsDeprecated: false,
         Settings: Settings.Default);
-    
+
     public string CSharpTypeWithoutNullability => CSharpTypeRaw.TrimEnd('?');
     public string CSharpTypeWithNullability => CSharpTypeWithoutNullability + "?";
     public string ShortCSharpTypeWithoutNullability => CSharpTypeWithoutNullability.Replace($"global::{Namespace}.", string.Empty);
@@ -75,7 +75,7 @@ public record struct TypeData(
         CSharpTypeWithoutNullability is "string" ||
         IsAnyOfLike ||
         IsEnum;
-    
+
     public string ConverterType =>
         IsUnixTimestamp
             ? $"global::{Settings.Namespace}.JsonConverters.UnixTimestampJsonConverter"
@@ -88,11 +88,36 @@ public record struct TypeData(
                         : AllOfCount > 0
                             ? $"global::{Settings.Namespace}.JsonConverters.AllOfJsonConverter<{string.Join(", ", SubTypes.Select(y => y.CSharpTypeWithNullabilityForValueTypes))}>"
                             : string.Empty;
-    
+
+    public string CSharpTypeRaw { get; set; } = CSharpTypeRaw;
+    public bool CSharpTypeNullability { get; set; } = CSharpTypeNullability;
+    public bool IsBaseClass { get; } = IsBaseClass;
+    public bool IsDerivedClass { get; } = IsDerivedClass;
+    public bool IsArray { get; } = IsArray;
+    public bool IsNullable { get; set; } = IsNullable;
+    public bool IsEnum { get; set; } = IsEnum;
+    public bool IsBase64 { get; } = IsBase64;
+    public bool IsDate { get; } = IsDate;
+    public bool IsDateTime { get; } = IsDateTime;
+    public bool IsBinary { get; } = IsBinary;
+    public bool IsValueType { get; } = IsValueType;
+    public bool IsUnixTimestamp { get; } = IsUnixTimestamp;
+    public int AnyOfCount { get; } = AnyOfCount;
+    public int OneOfCount { get; } = OneOfCount;
+    public int AllOfCount { get; } = AllOfCount;
+    public bool IsComponent { get; } = IsComponent;
+    public bool HasDiscriminator { get; } = HasDiscriminator;
+    public EquatableArray<string> Properties { get; } = Properties;
+    public EquatableArray<string> EnumValues { get; } = EnumValues;
+    public EquatableArray<TypeData> SubTypes { get; } = SubTypes;
+    public string Namespace { get; } = Namespace;
+    public bool IsDeprecated { get; } = IsDeprecated;
+    public Settings Settings { get; set; } = Settings;
+
     public static TypeData FromSchemaContext(SchemaContext context)
     {
         context = context ?? throw new ArgumentNullException(nameof(context));
-        
+
         var properties = ImmutableArray<string>.Empty;
         if (context.Schema.ResolveIfRequired() is { } referenceSchema)
         {
@@ -100,7 +125,7 @@ public record struct TypeData(
                 .Select(x => x.Key)
                 .ToImmutableArray();
         }
-        
+
         var subTypes = ImmutableArray<TypeData>.Empty;
         if (context.Schema.IsAnyOf())
         {
@@ -144,7 +169,7 @@ public record struct TypeData(
                 },
             ];
         }
-        
+
         var enumValues = ImmutableArray<string>.Empty;
         if (context.Schema.IsEnum())
         {
@@ -159,9 +184,9 @@ public record struct TypeData(
                 .Select(x => x.Id)
                 .ToImmutableArray();
         }
-        
+
         var type = GetCSharpType(context);
-        
+
         return new TypeData(
             CSharpTypeRaw: type,
             CSharpTypeNullability: GetCSharpNullability(context),
@@ -196,11 +221,11 @@ public record struct TypeData(
             IsDeprecated: context.Schema.Deprecated,
             Settings: context.Settings);
     }
-    
+
     public static bool ContextIsValueType(SchemaContext context)
     {
         context = context ?? throw new ArgumentNullException(nameof(context));
-        
+
         return (context.Schema.Type, context.Schema.Format) switch
         {
             (_, _) when context.IsAnyOfLikeStructure => true,
@@ -213,30 +238,30 @@ public record struct TypeData(
             ("string", "date-time") => true,
             ("string", "password") => true,
             ("string", "uuid") => true,
-            
+
             // AssemblyAI format
             (null, "float") => true,
             (null, "double") => true,
             (null, "boolean") => true,
-            
+
             _ => false,
         };
     }
-    
+
     public static string GetCSharpType(SchemaContext context)
     {
         context = context ?? throw new ArgumentNullException(nameof(context));
-        
+
         var type = (context.Schema.Type, context.Schema.Format) switch
         {
             (_, _) when context.Schema.IsUnixTimestamp() => "global::System.DateTimeOffset",
-            
+
             (_, _) when context.Schema.IsArray() =>
                 $"{context.Children.FirstOrDefault(x => x.Hint == Hint.ArrayItem)?.TypeData.CSharpTypeWithoutNullability}".AsArray(),
 
             (_, _) when context.IsNamedAnyOfLike => $"global::{context.Settings.Namespace}.{context.Id}",
             (_, _) when context.IsDerivedClass => $"global::{context.Settings.Namespace}.{context.Id}",
-            
+
             (_, _) when context.Schema.IsAnyOf() => $"global::{context.Settings.Namespace}.AnyOf<{string.Join(", ", context.Children.Where(x => x.Hint == Hint.AnyOf).Select(x => x.TypeData.CSharpTypeWithNullabilityForValueTypes))}>",
             (_, _) when context.Schema.IsOneOf() => $"global::{context.Settings.Namespace}.OneOf<{string.Join(", ", context.Children.Where(x => x.Hint == Hint.OneOf).Select(x => x.TypeData.CSharpTypeWithNullabilityForValueTypes))}>",
             (_, _) when context.Schema.IsAllOf() => $"global::{context.Settings.Namespace}.AllOf<{string.Join(", ", context.Children.Where(x => x.Hint == Hint.AllOf).Select(x => x.TypeData.CSharpTypeWithNullabilityForValueTypes))}>",
@@ -246,27 +271,27 @@ public record struct TypeData(
                 (context.Schema.ResolveIfRequired().Properties.Count > 0 ||
                  !context.Schema.ResolveIfRequired().AdditionalPropertiesAllowed) =>
                 $"global::{context.Settings.Namespace}.{context.Id}",
-            
+
             // ("object", _) or (null, "object") when context.Schema.Reference == null =>
             //     $"global::{context.Settings.Namespace}.{context.Id}",
-            
+
             ("object", _) or (null, "object") when
                 context.Schema.Reference == null &&
                 (context.Schema.Properties.Count > 0 ||
                 !context.Schema.AdditionalPropertiesAllowed) =>
                 $"global::{context.Settings.Namespace}.{context.Id}",
-            
+
             ("object", _) when
                 context.Schema.AdditionalProperties?.Type is not null =>
                 $"global::System.Collections.Generic.Dictionary<string, {context.Children.FirstOrDefault(x => x.Hint == Hint.AdditionalProperties)?.TypeData.CSharpType}>",
-            
+
             ("string", _) when context.Schema.Enum.Any() =>
                 $"global::{context.Settings.Namespace}.{context.Id}",
 
             (null, "boolean") => "bool",
             (null, "float") => "float",
             (null, "double") => "double",
-            
+
             // https://learn.microsoft.com/en-us/aspnet/core/fundamentals/openapi/include-metadata?view=aspnetcore-9.0&tabs=minimal-apis#type-and-format
             ("boolean", _) => "bool",
             ("integer", "int64") => "long",
@@ -282,7 +307,7 @@ public record struct TypeData(
             ("string", "date") => "global::System.DateTime",
             ("string", "date-time") => "global::System.DateTime",
             ("string", "password") => "string",
-            
+
             // Possible future types - not supported yet
             // ("string", "time") => "global::System.TimeOnly",
             // ("string", "date") => "global::System.DateOnly",
@@ -291,7 +316,7 @@ public record struct TypeData(
             // ("string", "duration") => "global::System.TimeSpan",
             // ("string", "uri") => "global::System.Uri",
             ("string", "uuid") => "global::System.Guid",
-            
+
             (null, "url") => "string",
 
             ("integer", _) => "int",
@@ -299,12 +324,12 @@ public record struct TypeData(
             ("string", _) => "string",
             (null, "string") => "string",
             ("object", _) => "object",
-            
+
             (null, null) when (context.IsClass && context.ClassData?.Properties.Length > 0) || context.IsEnum =>
                 $"global::{context.Settings.Namespace}.{context.Id}",
-            (null, null)  => "object",
-            ("null", _)  => "object",
-            ("any", _)  => "object",
+            (null, null) => "object",
+            ("null", _) => "object",
+            ("any", _) => "object",
             _ => throw new NotSupportedException($"Type {context.Schema.Type} is not supported."),
         };
 
@@ -316,8 +341,80 @@ public record struct TypeData(
         SchemaContext? additionalContext = null)
     {
         context = context ?? throw new ArgumentNullException(nameof(context));
-        
+
         return context.Schema.Nullable ||
                !context.IsRequired && additionalContext?.IsRequired != true;
+    }
+
+    public bool Equals(TypeData other)
+    {
+        return CSharpTypeRaw == other.CSharpTypeRaw &&
+               CSharpTypeNullability == other.CSharpTypeNullability &&
+               IsBaseClass == other.IsBaseClass &&
+               IsDerivedClass == other.IsDerivedClass &&
+               IsArray == other.IsArray &&
+               IsNullable == other.IsNullable &&
+               IsEnum == other.IsEnum &&
+               IsBase64 == other.IsBase64 &&
+               IsDate == other.IsDate &&
+               IsDateTime == other.IsDateTime &&
+               IsBinary == other.IsBinary &&
+               IsValueType == other.IsValueType &&
+               IsUnixTimestamp == other.IsUnixTimestamp &&
+               AnyOfCount == other.AnyOfCount &&
+               OneOfCount == other.OneOfCount &&
+               AllOfCount == other.AllOfCount &&
+               IsComponent == other.IsComponent &&
+               HasDiscriminator == other.HasDiscriminator &&
+               Properties.Equals(other.Properties) &&
+               EnumValues.Equals(other.EnumValues) &&
+               SubTypes.Equals(other.SubTypes) &&
+               Namespace == other.Namespace &&
+               IsDeprecated == other.IsDeprecated &&
+               Settings.Equals(other.Settings);
+    }
+
+    public static bool operator ==(TypeData a, TypeData b)
+    {
+        // Check if both objects are the same instance
+        if (ReferenceEquals(a, b)) return true;
+
+        // Check if either is null
+        if (ReferenceEquals(a, null) || ReferenceEquals(b, null)) return false;
+
+        // Compare all fields for equality
+        return a.CSharpTypeRaw == b.CSharpTypeRaw &&
+               a.CSharpTypeNullability == b.CSharpTypeNullability &&
+               a.IsBaseClass == b.IsBaseClass &&
+               a.IsDerivedClass == b.IsDerivedClass &&
+               a.IsArray == b.IsArray &&
+               a.IsNullable == b.IsNullable &&
+               a.IsEnum == b.IsEnum &&
+               a.IsBase64 == b.IsBase64 &&
+               a.IsDate == b.IsDate &&
+               a.IsDateTime == b.IsDateTime &&
+               a.IsBinary == b.IsBinary &&
+               a.IsValueType == b.IsValueType &&
+               a.IsUnixTimestamp == b.IsUnixTimestamp &&
+               a.AnyOfCount == b.AnyOfCount &&
+               a.OneOfCount == b.OneOfCount &&
+               a.AllOfCount == b.AllOfCount &&
+               a.IsComponent == b.IsComponent &&
+               a.HasDiscriminator == b.HasDiscriminator &&
+               a.Properties.Equals(b.Properties) &&
+               a.EnumValues.Equals(b.EnumValues) &&
+               a.SubTypes.Equals(b.SubTypes) &&
+               a.Namespace == b.Namespace &&
+               a.IsDeprecated == b.IsDeprecated &&
+               a.Settings.Equals(b.Settings);
+    }
+    public static bool operator !=(TypeData a, TypeData b)
+    {
+        return !(a == b);
+    }
+
+    public override bool Equals(object obj)
+    {
+        return obj is TypeData && Equals((TypeData)obj);
     }
 }
